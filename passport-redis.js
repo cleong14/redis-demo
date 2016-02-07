@@ -1,9 +1,11 @@
 var express = require('express');
+var path = require('path');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var LocalStrategy = require('passport-local');
 var session = require('express-session');
 var config = require('./config');
+var morgan = require('morgan');
 
 var app = express();
 var router = express.Router();
@@ -23,6 +25,19 @@ app.use(session(config.session));
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(morgan('dev'));
+
+passport.use(new LocalStrategy(
+  {
+    passReqToCallback: true
+  },
+
+  function (req, username, password, done) {
+    var body = req.body;
+    return done(null, {name: req.body.name});
+  }
+));
+
 passport.serializeUser(function (user, done) {
   return done(null, user);
 });
@@ -31,32 +46,25 @@ passport.deserializeUser(function (user, done) {
   return done(null, user);
 });
 
-// passport.use(new LocalStrategy(
-//   function (name, done) {
-//     User.find({
-//       where: {
-//         name: name
-//       }
-//     })
-//     .then(function (user) {
-//       if (!name) {
-//         return done(null, false);
-//       }
-//       if (user.name === name) {
-//         return done(null, user);
-//       }
-//     });
-//   }  
-// ));
+app.get('/', function (req, res) {
+  var user = req.user;
+  if (!user) {
+    return res.redirect('/info');
+  }
+  return res.send('Welcome back, ' + user.name + '!');
+});
 
 router.route('/info')
   .get(function (req, res) {
     res.render('get-info');
   })
 
-  .post(function (req, res) {
-    res.send('Thank you!');
-  });
+  .post(
+    passport.authenticate('local', {
+      successRedirect: '/',
+      failureRedirect: '/info'
+    })
+  );
 
 app.use('/', router);
 

@@ -6,4 +6,6 @@ head
 body
   h1 Name please?
   form(method="POST", action="/info")
-    input(type="text", name="name")
+    input(type="text", name="name" placeholder="Your name")
+    input(type="hidden" name="username" value="username")
+    input(type="hidden" name="password" value="password") 
